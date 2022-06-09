@@ -1,0 +1,42 @@
+[default]
+region = eu-central-1
+
+[profile devops]
+role_arn = arn:aws:iam::479342558352:role/OrganizationAccountAccessRole
+source_profile = default
+region = ap-southeast-1
+
+[profile sc-master]
+role_arn = arn:aws:iam::514755528584:role/OrganizationAccountAccessRole
+source_profile = default
+region = eu-central-1
+
+[profile sc-zalora2]
+role_arn = arn:aws:iam::704749949618:role/OrganizationAccountAccessRole
+source_profile = default
+region = ap-southeast-1
+
+[profile sc-lamoda1]
+role_arn = arn:aws:iam::840743931192:role/OrganizationAccountAccessRole
+source_profile = default
+region = eu-central-1
+
+[profile sc-iconic2]
+role_arn = arn:aws:iam::952309595981:role/OrganizationAccountAccessRole
+source_profile = default
+region = ap-southeast-2
+
+[profile sc-dafiti1use1]
+role_arn = arn:aws:iam::745962336740:role/OrganizationAccountAccessRole
+source_profile = default
+region = sa-east-1
+
+[profile sc-dafiti3use1]
+role_arn = arn:aws:iam::324944604469:role/OrganizationAccountAccessRole
+source_profile = default
+region = sa-east-1
+
+[profile sc-dev]
+role_arn = arn:aws:iam::476125643079:role/ManagerCrossAccountRole
+source_profile = default
+region = ap-southeast-1

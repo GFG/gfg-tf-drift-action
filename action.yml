@@ -1,0 +1,98 @@
+name: "tf_drift_action"
+description: "Check terraform drift"
+inputs:
+  token:
+    description: Github token for downloading the repository
+    required: true
+  terraform-version:
+    description: Terraform version
+    required: true
+  terraform-api-token:
+    required: true
+  terragrunt-version:
+    description: Terragrunt version
+    required: true
+  tf-slack-channel:
+    description: Terraform slack channel
+    required: true
+  tf-slack-user:
+    description: Terraform slack username
+    required: true
+  slack-author:
+    description: Slack author username
+    required: true
+  slack-webhook:
+    description: Slack webhook
+    required: true
+  aws-access-key-id:
+    description: AWS API Key ID
+    required: true
+  aws-secret-key:
+    description: AWS Secret Key
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: 'Checkout'
+      uses: actions/checkout@v2
+      with:
+      uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_version: ${{ inputs.terraform-version }}
+        cli_config_credentials_token: ${{ inputs.terraform-api-token }}
+    - name: 'Setup Terragrunt'
+      uses: autero1/action-terragrunt@v1.1.0
+      with:
+        terragrunt_version: ${{ inputs.terragrunt-version }}
+    - name: 'Create AWS credentials file'
+      run: |
+        ${{ github.action_path }}/create_aws_credentials_file.sh ${{ inputs.aws-access-key-id }} ${{ inputs.aws-secret-key }}
+      shell: bash
+    - name: 'Add AWS config file'
+      run: |
+        cp ${{ github.action_path }}/config ~/.aws/config
+        chown ubuntu:ubuntu ~/.aws/config
+        cp ${{ github.action_path }}/config /root/.aws/config
+        chown ubuntu:root /root/.aws/config
+      shell: bash
+    - name: 'Prepare Git'
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+        GITHUB_USERNAME: "gfg-hue"
+      run: |
+        ${{ github.action_path }}/git_config.sh
+      shell: bash
+    - name: 'Terraform init'
+      id: init
+      run: |
+        cd ${{ matrix.tf_config }}
+        terragrunt init
+      shell: bash
+    - name: 'Terraform plan'
+      id: plan
+      run: |
+        cd ${{ matrix.tf_config }}
+        terragrunt plan -lock=false -detailed-exitcode
+      continue-on-error: true
+      shell: bash
+    - name: 'Clean AWS creds'
+      if: always()
+      run: |
+        echo "Cleaning up AWS credentials"
+        rm -rf ~/.aws
+        rm -rf /root/.aws
+      shell: bash
+    - name: 'Slack Notification on failure'
+      if: steps.plan.outcome == 'failure'
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_CHANNEL: ${{ inputs.tf-slack-channel }}
+        SLACK_USERNAME: ${{ inputs.tf-slack-user }}
+        SLACK_MSG_AUTHOR: ${{ inputs.slack-author }}
+        SLACK_COLOR: ${{ job.status }}
+        SLACK_ICON: https://github.com/github.png?size=48
+        SLACK_TITLE: 'Terraform infrastructure drift'
+        SLACK_MESSAGE: 'Drift detected in ${{ matrix.tf_config }} Terraform state'
+        SLACK_FOOTER: |
+          'See the link https://github.com/GFG/terraform-ventures-infrastructure/actions/runs/${{ github.run_id }}?check_suite_focus=true'
+        SLACK_WEBHOOK: ${{ inputs.slack-webhook }}
