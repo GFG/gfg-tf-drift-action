@@ -36,18 +36,24 @@ runs:
     - name: 'Checkout'
       uses: actions/checkout@v2
       with:
+        fetch-depth: 0
+
+    - name: 'Setup Terraform'
       uses: hashicorp/setup-terraform@v1
       with:
         terraform_version: ${{ inputs.terraform-version }}
         cli_config_credentials_token: ${{ inputs.terraform-api-token }}
+
     - name: 'Setup Terragrunt'
       uses: autero1/action-terragrunt@v1.1.0
       with:
         terragrunt_version: ${{ inputs.terragrunt-version }}
+
     - name: 'Create AWS credentials file'
       run: |
         ${{ github.action_path }}/create_aws_credentials_file.sh ${{ inputs.aws-access-key-id }} ${{ inputs.aws-secret-key }}
       shell: bash
+
     - name: 'Add AWS config file'
       run: |
         cp ${{ github.action_path }}/config ~/.aws/config
@@ -55,6 +61,7 @@ runs:
         cp ${{ github.action_path }}/config /root/.aws/config
         chown ubuntu:root /root/.aws/config
       shell: bash
+
     - name: 'Prepare Git'
       env:
         GITHUB_TOKEN: ${{ inputs.token }}
@@ -62,12 +69,14 @@ runs:
       run: |
         ${{ github.action_path }}/git_config.sh
       shell: bash
+
     - name: 'Terraform init'
       id: init
       run: |
         cd ${{ matrix.tf_config }}
         terragrunt init
       shell: bash
+
     - name: 'Terraform plan'
       id: plan
       run: |
@@ -75,6 +84,7 @@ runs:
         terragrunt plan -lock=false -detailed-exitcode
       continue-on-error: true
       shell: bash
+
     - name: 'Clean AWS creds'
       if: always()
       run: |
@@ -82,6 +92,7 @@ runs:
         rm -rf ~/.aws
         rm -rf /root/.aws
       shell: bash
+
     - name: 'Slack Notification on failure'
       if: steps.plan.outcome == 'failure'
       uses: rtCamp/action-slack-notify@v2
