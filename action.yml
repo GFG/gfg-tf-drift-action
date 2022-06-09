@@ -1,4 +1,4 @@
-name: "tf_drift_action"
+name: "gfg-tf-drift-action"
 description: "Check terraform drift"
 inputs:
   token:
